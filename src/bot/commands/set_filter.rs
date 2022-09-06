@@ -69,7 +69,7 @@ impl Command for SetFilter {
             Err(error_message) => error_message,
         }
     }
-
+    
     fn command(&self) -> &str {
         Self::command()
     }

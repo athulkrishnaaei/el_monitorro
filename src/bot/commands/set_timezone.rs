@@ -6,6 +6,10 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
+
+
+
+
 static COMMAND: &str = "/set_timezone";
 
 pub struct SetTimezone {}

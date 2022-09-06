@@ -36,11 +36,11 @@ impl Command for Start {
         _db_pool: Pool<ConnectionManager<PgConnection>>,
         _message: &Message,
         _api: &Api,
-    ) -> String {
-        START.to_string()
+    ) -> String{
+      START.to_string()
     }
-
     fn command(&self) -> &str {
         Self::command()
     }
 }
+

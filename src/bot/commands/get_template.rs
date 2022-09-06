@@ -29,6 +29,7 @@ impl GetTemplate {
         }
     }
 
+
     pub fn command() -> &'static str {
         COMMAND
     }
