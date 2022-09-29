@@ -358,8 +358,6 @@ impl Handler {
         let commands = &text.unwrap();
         let data = &commands.replace(&bot_name, "");
         message.text = Some(data.clone());
-        info!("{:?} send callback_data: {}", message.chat.id, commands);
-        // println!("command ==={}",commands);
         let command = CallbackDatas::from_str(commands).unwrap();
 
         match command {
