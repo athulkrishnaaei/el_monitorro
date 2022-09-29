@@ -43,6 +43,8 @@ table! {
         utc_offset_minutes -> Nullable<Int4>,
         template -> Nullable<Text>,
         filter_words -> Nullable<Array<Text>>,
+        no_preview -> Bool,
+        disable_notification ->Bool,
     }
 }
 
@@ -56,6 +58,8 @@ table! {
         template -> Nullable<Text>,
         filter_words -> Nullable<Array<Text>>,
         has_updates -> Bool,
+        no_preview -> Bool,
+        disable_notification -> Bool,
     }
 }
 

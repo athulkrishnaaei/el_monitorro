@@ -135,6 +135,53 @@ impl Api {
             }
         }
     }
+
+    pub fn send_no_preview_text_message(
+        &self,
+        chat_id: i64,
+        message: String,
+        web_preview: bool,
+        notification: bool,
+    ) -> Result<(), Error> {
+        self.reply_with_no_preview_text_message(chat_id, message, None, web_preview, notification)
+    }
+
+    pub fn reply_with_no_preview_text_message(
+        &self,
+        chat_id: i64,
+        message: String,
+        message_id: Option<i32>,
+        web_preview: bool,
+        notification: bool,
+    ) -> Result<(), Error> {
+        let send_message_params = match message_id {
+            None => SendMessageParams::builder()
+                .chat_id(chat_id)
+                .text(message)
+                .parse_mode(ParseMode::Html)
+                .disable_web_page_preview(web_preview)
+                .disable_notification(notification)
+                .build(),
+
+            Some(message_id_value) => SendMessageParams::builder()
+                .chat_id(chat_id)
+                .text(message)
+                .parse_mode(ParseMode::Html)
+                .reply_to_message_id(message_id_value)
+                .build(),
+        };
+
+        match self.send_message(&send_message_params) {
+            Ok(_) => Ok(()),
+            Err(err) => {
+                error!(
+                    "Failed to send message {:?}: {:?}",
+                    err, send_message_params
+                );
+                Err(err)
+            }
+        }
+    }
 }
 
 impl From<isahc::http::Error> for Error {

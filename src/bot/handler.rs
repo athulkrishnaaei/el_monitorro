@@ -14,7 +14,11 @@ use super::commands::remove_template::RemoveTemplate;
 use super::commands::set_content_fields::SetContentFields;
 use super::commands::set_filter::SetFilter;
 use super::commands::set_global_filter::SetGlobalFilter;
+use super::commands::set_global_notification::SetGlobalNotification;
+use super::commands::set_global_preview::SetGlobalPreview;
 use super::commands::set_global_template::SetGlobalTemplate;
+use super::commands::set_notification::SetNotification;
+use super::commands::set_preview::SetPreview;
 use super::commands::set_template::SetTemplate;
 use super::commands::set_timezone::SetTimezone;
 use super::commands::start::Start;
@@ -25,6 +29,7 @@ use regex::Regex;
 use std::str::FromStr;
 
 use crate::bot::commands::set_global_template_inline_keyboard::SetGlobalTemplateInlineKeyboard;
+use crate::bot::commands::set_notification_preview_keyboard::SetNotificationPreviewKeyboard;
 use crate::bot::commands::set_template_inline_keyboard::SetTemplateInlineKeyboard;
 use crate::bot::telegram_client::Api;
 use crate::config::Config;
@@ -51,6 +56,12 @@ enum CallbackDatas {
     SlashGetTemplate,
     SlashSetTemplate,
     SetTemplate,
+    SlashSetNotification,
+    SetNotification,
+    SlashSetPreview,
+    SetPreview,
+    SlashSetGlobalNotification,
+    SlashSetGlobalPreview,
     Substring,
     Italic,
     Bold,
@@ -58,12 +69,12 @@ enum CallbackDatas {
     SetDefaulTemplate,
     SlashRemoveTemplate,
     SlashRemoveFilter,
+    SlashSetGlobalTemplate,
     GlobalItalic,
     GlobalBold,
     GlobalCreateLink,
     GlobalSubstring,
     GlobalDefaultTemplate,
-    SlashUnsubscribe,
     GlobalTemplateCreateLinkDescription,
     GlobalTemplateCreateLinkBotItemName,
     Unsubscribe,
@@ -75,56 +86,113 @@ impl FromStr for CallbackDatas {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let st = s.to_string();
-        let result = match st {
-            st if st.starts_with(ListSubscriptions::command()) => {
+        let callback_data = s.to_string();
+        let result = match callback_data {
+            callback_data if callback_data.starts_with(ListSubscriptions::command()) => {
                 CallbackDatas::SlashListSubscriptions
             }
-            st if st.starts_with(ListSubscriptions::callback()) => CallbackDatas::ListSubscriptions,
-            st if st.starts_with(GetFilter::command()) => CallbackDatas::SlashGetFilter,
-            st if st.starts_with(SetTemplate::command()) => CallbackDatas::SlashSetTemplate,
-            st if st.starts_with(SetTemplate::callback()) => CallbackDatas::SetTemplate,
-            st if st.starts_with(SetTemplateInlineKeyboard::substring()) => {
+            callback_data if callback_data.starts_with(ListSubscriptions::callback()) => {
+                CallbackDatas::ListSubscriptions
+            }
+            callback_data if callback_data.starts_with(GetFilter::command()) => {
+                CallbackDatas::SlashGetFilter
+            }
+            callback_data if callback_data.starts_with(SetNotification::command()) => {
+                CallbackDatas::SlashSetNotification
+            }
+            callback_data if callback_data.starts_with(SetNotification::callback()) => {
+                CallbackDatas::SetNotification
+            }
+            callback_data if callback_data.starts_with(SetPreview::command()) => {
+                CallbackDatas::SlashSetPreview
+            }
+            callback_data if callback_data.starts_with(SetPreview::callback()) => {
+                CallbackDatas::SetPreview
+            }
+            callback_data if callback_data.starts_with(SetGlobalNotification::command()) => {
+                CallbackDatas::SlashSetGlobalNotification
+            }
+            callback_data if callback_data.starts_with(SetGlobalPreview::command()) => {
+                CallbackDatas::SlashSetGlobalPreview
+            }
+            callback_data if callback_data.starts_with(SetTemplate::command()) => {
+                CallbackDatas::SlashSetTemplate
+            }
+            callback_data if callback_data.starts_with(SetTemplate::callback()) => {
+                CallbackDatas::SetTemplate
+            }
+            callback_data if callback_data.starts_with(SetTemplateInlineKeyboard::substring()) => {
                 CallbackDatas::Substring
             }
-            st if st.starts_with(SetTemplateInlineKeyboard::italic()) => CallbackDatas::Italic,
-            st if st.starts_with(SetTemplateInlineKeyboard::bold()) => CallbackDatas::Bold,
-            st if st.starts_with(SetTemplateInlineKeyboard::create_link()) => {
+            callback_data if callback_data.starts_with(SetTemplateInlineKeyboard::italic()) => {
+                CallbackDatas::Italic
+            }
+            callback_data if callback_data.starts_with(SetTemplateInlineKeyboard::bold()) => {
+                CallbackDatas::Bold
+            }
+            callback_data
+                if callback_data.starts_with(SetTemplateInlineKeyboard::create_link()) =>
+            {
                 CallbackDatas::CreateLink
             }
-            st if st.starts_with(SetTemplate::default_template()) => {
+            callback_data if callback_data.starts_with(SetTemplate::default_template()) => {
                 CallbackDatas::SetDefaulTemplate
             }
-            st if st.starts_with(GetTemplate::command()) => CallbackDatas::SlashGetTemplate,
-            st if st.starts_with(RemoveTemplate::command()) => CallbackDatas::SlashRemoveTemplate,
-            st if st.starts_with(RemoveFilter::command()) => CallbackDatas::SlashRemoveFilter,
-            st if st.starts_with(SetGlobalTemplate::create_link_description()) => {
+            callback_data if callback_data.starts_with(GetTemplate::command()) => {
+                CallbackDatas::SlashGetTemplate
+            }
+            callback_data if callback_data.starts_with(RemoveTemplate::command()) => {
+                CallbackDatas::SlashRemoveTemplate
+            }
+            callback_data if callback_data.starts_with(RemoveFilter::command()) => {
+                CallbackDatas::SlashRemoveFilter
+            }
+            callback_data if callback_data.starts_with(SetGlobalTemplate::command()) => {
+                CallbackDatas::SlashSetGlobalTemplate
+            }
+            callback_data
+                if callback_data.starts_with(SetGlobalTemplate::create_link_description()) =>
+            {
                 CallbackDatas::GlobalTemplateCreateLinkDescription
             }
-            st if st.starts_with(SetGlobalTemplate::create_link_item_name()) => {
+            callback_data
+                if callback_data.starts_with(SetGlobalTemplate::create_link_item_name()) =>
+            {
                 CallbackDatas::GlobalTemplateCreateLinkBotItemName
             }
-            st if st.starts_with(SetGlobalTemplateInlineKeyboard::italic()) => {
+            callback_data
+                if callback_data.starts_with(SetGlobalTemplateInlineKeyboard::italic()) =>
+            {
                 CallbackDatas::GlobalItalic
             }
-            st if st.starts_with(SetGlobalTemplateInlineKeyboard::bold()) => {
+            callback_data if callback_data.starts_with(SetGlobalTemplateInlineKeyboard::bold()) => {
                 CallbackDatas::GlobalBold
             }
-            st if st.starts_with(SetGlobalTemplateInlineKeyboard::create_link()) => {
+            callback_data
+                if callback_data.starts_with(SetGlobalTemplateInlineKeyboard::create_link()) =>
+            {
                 CallbackDatas::GlobalCreateLink
             }
-            st if st.starts_with(SetGlobalTemplateInlineKeyboard::substring()) => {
+            callback_data
+                if callback_data.starts_with(SetGlobalTemplateInlineKeyboard::substring()) =>
+            {
                 CallbackDatas::GlobalSubstring
             }
-            st if st.starts_with(SetGlobalTemplateInlineKeyboard::default_template()) => {
+            callback_data
+                if callback_data
+                    .starts_with(SetGlobalTemplateInlineKeyboard::default_template()) =>
+            {
                 CallbackDatas::GlobalDefaultTemplate
             }
-            st if st.starts_with(Unsubscribe::command()) => CallbackDatas::SlashUnsubscribe,
-            st if st.starts_with(Unsubscribe::callback()) => CallbackDatas::Unsubscribe,
-            st if st.starts_with(ListSubscriptionsInlineKeyboard::back_to_menu()) => {
+            callback_data if callback_data.starts_with(Unsubscribe::callback()) => {
+                CallbackDatas::Unsubscribe
+            }
+            callback_data
+                if callback_data.starts_with(ListSubscriptionsInlineKeyboard::back_to_menu()) =>
+            {
                 CallbackDatas::BackToMenu
             }
-            _ => CallbackDatas::UnknownCommand(st),
+            _ => CallbackDatas::UnknownCommand(callback_data),
         };
         Ok(result)
     }
@@ -205,6 +273,14 @@ impl Handler {
 
         if !command.starts_with('/') {
             UnknownCommand::execute(db_pool, api, message);
+        } else if command.starts_with(SetPreview::command()) {
+            SetPreview::execute(db_pool, api, message);
+        } else if command.starts_with(SetGlobalPreview::command()) {
+            SetGlobalPreview::execute(db_pool, api, message);
+        } else if command.starts_with(SetGlobalNotification::command()) {
+            SetGlobalNotification::execute(db_pool, api, message);
+        } else if command.starts_with(SetNotification::command()) {
+            SetNotification::execute(db_pool, api, message);
         } else if command.starts_with(Subscribe::command()) {
             Subscribe::execute(db_pool, api, message);
         } else if command.starts_with(Help::command()) {
@@ -266,7 +342,7 @@ impl Handler {
             UpdateContent::CallbackQuery(callback_query) => callback_query,
             _ => return,
         };
-        println!("call back query ==={:?}", query);
+
         let mut message = query.message.unwrap();
         let messageid = message.message_id;
         let chatid = message.chat.id;
@@ -282,10 +358,10 @@ impl Handler {
         let commands = &text.unwrap();
         let data = &commands.replace(&bot_name, "");
         message.text = Some(data.clone());
-
+        info!("{:?} send callback_data: {}", message.chat.id, commands);
+        // println!("command ==={}",commands);
         let command = CallbackDatas::from_str(commands).unwrap();
 
-        println!("command =={:?}", command);
         match command {
             CallbackDatas::SlashListSubscriptions => {
                 ListSubscriptions::execute(db_pool, api, message);
@@ -309,14 +385,54 @@ impl Handler {
                 let feed_id = Self::parse_int_from_string(commands).unwrap();
                 let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id);
                 message.text = Some(format!("/get_filter {}", feed_url));
-                GetFilter::execute(db_pool, api, message)
+                GetFilter::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
+            }
+            CallbackDatas::SlashSetNotification => {
+                let feed_id = Self::parse_int_from_string(commands).unwrap();
+                let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.to_string());
+                let text = &commands.replace(&feed_id, &feed_url);
+                message.text = Some(text.trim().to_string());
+                SetNotification::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
+            }
+            CallbackDatas::SetNotification => {
+                let feed_id = Self::parse_int_from_string(commands).unwrap();
+                api.delete_message(&delete_message_params).unwrap();
+                let send_message_params =
+                    SetNotificationPreviewKeyboard::set_notification_keyboard(message, feed_id);
+                api.send_message(&send_message_params).unwrap();
+            }
+            CallbackDatas::SlashSetPreview => {
+                let feed_id = Self::parse_int_from_string(commands).unwrap();
+                let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.to_string());
+                let text = &commands.replace(&feed_id, &feed_url);
+                message.text = Some(text.trim().to_string());
+                SetPreview::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
+            }
+            CallbackDatas::SetPreview => {
+                let feed_id = Self::parse_int_from_string(commands).unwrap();
+                api.delete_message(&delete_message_params).unwrap();
+                let send_message_params =
+                    SetNotificationPreviewKeyboard::set_preview_keyboard(message, feed_id);
+                api.send_message(&send_message_params).unwrap();
+            }
+            CallbackDatas::SlashSetGlobalNotification => {
+                SetGlobalNotification::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
+            }
+            CallbackDatas::SlashSetGlobalPreview => {
+                SetGlobalPreview::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
             }
             CallbackDatas::SlashSetTemplate => {
                 let feed_id = Self::parse_int_from_string(commands).unwrap();
                 let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.to_string());
                 let text = &commands.replace(&feed_id, &feed_url);
                 message.text = Some(text.trim().to_string());
-                SetTemplate::execute(db_pool, api, message);
+                SetTemplate::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
             }
             CallbackDatas::SetTemplate => {
                 let feed_id = Self::parse_int_from_string(commands).unwrap();
@@ -374,41 +490,50 @@ impl Handler {
                     Self::parse_int_from_string(commands).unwrap(),
                 );
                 message.text = Some(format!("/set_template {} {}", feed_url, DEFAULT_TEMPLATE));
-                SetTemplate::execute(db_pool, api, message);
+                SetTemplate::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
             }
             CallbackDatas::SlashGetTemplate => {
                 let feed_id = Self::parse_int_from_string(commands).unwrap();
                 let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.to_string());
                 let text = &commands.replace(&feed_id, &feed_url);
                 message.text = Some(text.trim().to_string());
-                GetTemplate::execute(db_pool, api, message);
+                GetTemplate::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
             }
             CallbackDatas::SlashRemoveTemplate => {
                 let feed_id = Self::parse_int_from_string(commands).unwrap();
                 let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.to_string());
                 let text = &commands.replace(&feed_id, &feed_url);
                 message.text = Some(text.trim().to_string());
-                RemoveTemplate::execute(db_pool, api, message);
+                RemoveTemplate::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
             }
             CallbackDatas::SlashRemoveFilter => {
                 let feed_id = Self::parse_int_from_string(commands).unwrap();
                 let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.to_string());
                 let text = &commands.replace(&feed_id, &feed_url);
                 message.text = Some(text.trim().to_string());
-                RemoveFilter::execute(db_pool, api, message);
+                RemoveFilter::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
+            }
+            CallbackDatas::SlashSetGlobalTemplate => {
+                SetGlobalTemplate::execute(db_pool, api, message)
             }
             CallbackDatas::GlobalTemplateCreateLinkDescription => {
                 message.text = Some(
                     "/set_global_template {{create_link bot_item_description bot_item_link}}"
                         .to_string(),
                 );
-                SetGlobalTemplate::execute(db_pool, api, message);
+                SetGlobalTemplate::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
             }
             CallbackDatas::GlobalTemplateCreateLinkBotItemName => {
                 message.text = Some(
                     "/set_global_template {{create_link bot_item_name bot_item_link}}".to_string(),
                 );
-                SetGlobalTemplate::execute(db_pool, api, message)
+                SetGlobalTemplate::execute(db_pool, api.clone(), message);
+                api.delete_message(&delete_message_params).unwrap();
             }
             CallbackDatas::GlobalItalic => {
                 api.delete_message(&delete_message_params).unwrap();
@@ -443,22 +568,19 @@ impl Handler {
                 message.text = Some(format!("/set_global_template {}", DEFAULT_TEMPLATE));
                 SetGlobalTemplate::execute(db_pool, api, message);
             }
-            CallbackDatas::SlashUnsubscribe => {
-                let feed_id = Self::parse_int_from_string(commands).unwrap();
-                let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id.to_string());
-                let text = &commands.replace(&feed_id, &feed_url);
-                message.text = Some(text.trim().to_string());
-                Unsubscribe::execute(db_pool, api, message);
-            }
             CallbackDatas::Unsubscribe => {
                 let feed_id = Self::parse_int_from_string(commands);
                 match feed_id {
                     Some(feed_id) => {
                         let feed_url = Self::get_feed_url_by_id(db_pool.clone(), feed_id);
                         message.text = Some(format!("/unsubscribe {}", feed_url));
-                        Unsubscribe::execute(db_pool, api, message);
+                        Unsubscribe::execute(db_pool, api.clone(), message);
+                        api.delete_message(&delete_message_params).unwrap();
                     }
-                    None => Unsubscribe::execute(db_pool, api, message),
+                    None => {
+                        Unsubscribe::execute(db_pool, api.clone(), message);
+                        api.delete_message(&delete_message_params).unwrap();
+                    }
                 }
             }
             CallbackDatas::BackToMenu => {

@@ -1,4 +1,5 @@
 use crate::bot::commands::list_subscriptions_inline_keyboard::ListSubscriptionsInlineKeyboard;
+use crate::bot::commands::set_global_notification_preview_keyboard::SetGlobalNotificationPreviewKeyboard;
 use crate::bot::commands::set_global_template_inline_keyboard::SetGlobalTemplateInlineKeyboard;
 use crate::bot::commands::set_template_inline_keyboard::SetTemplateInlineKeyboard;
 use crate::bot::commands::subscribe_inline_keyboard::SubscribeInlineKeyboard;
@@ -38,8 +39,14 @@ pub mod remove_template;
 pub mod set_content_fields;
 pub mod set_filter;
 pub mod set_global_filter;
+pub mod set_global_notification;
+pub mod set_global_notification_preview_keyboard;
+pub mod set_global_preview;
 pub mod set_global_template;
 pub mod set_global_template_inline_keyboard;
+pub mod set_notification;
+pub mod set_notification_preview_keyboard;
+pub mod set_preview;
 pub mod set_template;
 pub mod set_template_inline_keyboard;
 pub mod set_timezone;
@@ -56,6 +63,8 @@ enum Commands {
     SetGlobalTemplate,
     ListSubscriptions,
     SetTemplate,
+    SetGlobalNotification,
+    SetGlobalPreview,
     UnknownCommand(String),
 }
 
@@ -88,6 +97,8 @@ impl FromStr for Commands {
             "/set_template" => Commands::SetTemplate,
             "/set_global_template" => Commands::SetGlobalTemplate,
             "/list_subscriptions" => Commands::ListSubscriptions,
+            "/set_global_notification" => Commands::SetGlobalNotification,
+            "/set_global_preview" => Commands::SetGlobalPreview,
             _ => Commands::UnknownCommand(s.to_string()),
         };
 
@@ -149,6 +160,18 @@ pub trait Command {
                 api.delete_message(&delete_message_params).unwrap();
                 let send_message_params =
                     SetGlobalTemplateInlineKeyboard::set_global_template_keyboard(message);
+                api.send_message(&send_message_params).unwrap();
+            }
+            Commands::SetGlobalNotification => {
+                api.delete_message(&delete_message_params).unwrap();
+                let send_message_params =
+                    SetGlobalNotificationPreviewKeyboard::set_global_notification_keyboard(message);
+                api.send_message(&send_message_params).unwrap();
+            }
+            Commands::SetGlobalPreview => {
+                api.delete_message(&delete_message_params).unwrap();
+                let send_message_params =
+                    SetGlobalNotificationPreviewKeyboard::set_global_preview_keyboard(message);
                 api.send_message(&send_message_params).unwrap();
             }
             Commands::ListSubscriptions => {

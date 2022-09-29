@@ -23,11 +23,11 @@ impl ListSubscriptionsInlineKeyboard {
         let mut row3: Vec<InlineKeyboardButton> = Vec::new();
         let mut row4: Vec<InlineKeyboardButton> = Vec::new();
         let mut row5: Vec<InlineKeyboardButton> = Vec::new();
-        let mut row7: Vec<InlineKeyboardButton> = Vec::new();
+        let mut row6: Vec<InlineKeyboardButton> = Vec::new();
 
         let unsubscribe = InlineKeyboardButton::builder()
             .text("Unsubscribe")
-            .callback_data(format!("/unsubscribe {}", feed_id))
+            .callback_data(format!("unsubscribe {}", feed_id))
             .build();
 
         let remove_filter = InlineKeyboardButton::builder()
@@ -43,6 +43,16 @@ impl ListSubscriptionsInlineKeyboard {
         let set_template = InlineKeyboardButton::builder()
             .text("Set template")
             .callback_data(format!("set_template {}", feed_id))
+            .build();
+
+        let set_preview = InlineKeyboardButton::builder()
+            .text("Set Preview")
+            .callback_data(format!("set_preview {}", feed_id))
+            .build();
+
+        let set_notification = InlineKeyboardButton::builder()
+            .text("Set Notification")
+            .callback_data(format!("set_notification {}", feed_id))
             .build();
 
         let remove_template = InlineKeyboardButton::builder()
@@ -66,20 +76,22 @@ impl ListSubscriptionsInlineKeyboard {
             .build();
 
         row1.push(set_template);
-        row2.push(set_default_template);
+        row1.push(set_default_template);
+        row2.push(set_preview);
+        row2.push(set_notification);
         row3.push(get_filter);
         row3.push(remove_filter);
         row4.push(get_template);
         row4.push(remove_template);
         row5.push(unsubscribe);
-        row7.push(back_to_menu);
+        row6.push(back_to_menu);
 
         keyboard.push(row1);
         keyboard.push(row2);
         keyboard.push(row3);
         keyboard.push(row4);
         keyboard.push(row5);
-        keyboard.push(row7);
+        keyboard.push(row6);
 
         let inline_keyboard = InlineKeyboardMarkup::builder()
             .inline_keyboard(keyboard)

@@ -15,13 +15,13 @@ impl UnsubscribeInlineKeyboard {
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
         for feed in feeds.clone() {
-            for feedid in id.clone() {
+            for feed_id in id.clone() {
                 let mut row: Vec<InlineKeyboardButton> = Vec::new();
                 let name = format!("{} ", feed);
 
                 let unsubscribe_inlinekeyboard = InlineKeyboardButton::builder()
                     .text(name.clone())
-                    .callback_data(format!("unsubscribe {}", feedid))
+                    .callback_data(format!("unsubscribe {}", feed_id))
                     .build();
 
                 row.push(unsubscribe_inlinekeyboard);

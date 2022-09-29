@@ -1,0 +1,2 @@
+ALTER TABLE telegram_subscriptions ADD COLUMN disable_notification BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX telegram_subscriptions_disable_notification_index ON telegram_subscriptions(disable_notification);

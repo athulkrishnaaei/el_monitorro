@@ -6,50 +6,60 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
 
-static COMMAND: &str = "/set_global_filter";
+static COMMAND: &str = "/set_global_preview";
+static CALLBACK: &str = "set_global_preview";
+pub struct SetGlobalPreview {}
 
-pub struct SetGlobalFilter {}
-
-impl SetGlobalFilter {
+impl SetGlobalPreview {
     pub fn execute(db_pool: Pool<ConnectionManager<PgConnection>>, api: Api, message: Message) {
         Self {}.execute(db_pool, api, message);
     }
 
-    fn set_global_template(
+    fn set_global_preview(
         &self,
         db_connection: &mut PgConnection,
         message: &Message,
-        filter: String,
+        params: String,
     ) -> String {
         let chat = match telegram::find_chat(db_connection, message.chat.id) {
             Some(chat) => chat,
             None => return "You don't have any subcriptions".to_string(),
         };
 
-        if filter.is_empty() {
+        if params.is_empty() {
             return "Filter can not be empty".to_string();
         }
+        if params != "enable" && params != "disable" {
+            return "Enter enable or disable as parameter".to_string();
+        }
 
-        let filter_words = match self.parse_filter(&filter) {
-            Err(message) => return message,
-            Ok(words) => words,
+        let argument = match params.as_str() {
+            "enable" => false,
+            "disable" => true,
+            _ => false,
         };
-
-        match telegram::set_global_filter(db_connection, &chat, Some(filter_words.clone())) {
-            Ok(_) => format!(
-                "The global filter was updated:\n\n{}",
-                filter_words.join(", ")
-            ),
-            Err(_) => "Failed to update the filter".to_string(),
+        match telegram::set_global_preview(db_connection, &chat, argument) {
+            Ok(_) => {
+                if params == "disable" {
+                    "The messages will have no preview:".to_string()
+                } else {
+                    "The messages will have preview".to_string()
+                }
+            }
+            Err(_) => "Failed to update the preview".to_string(),
         }
     }
 
     pub fn command() -> &'static str {
         COMMAND
     }
+
+    pub fn callback() -> &'static str {
+        CALLBACK
+    }
 }
 
-impl Command for SetGlobalFilter {
+impl Command for SetGlobalPreview {
     fn response(
         &self,
         db_pool: Pool<ConnectionManager<PgConnection>>,
@@ -60,7 +70,7 @@ impl Command for SetGlobalFilter {
             Ok(mut connection) => {
                 let text = message.text.as_ref().unwrap();
                 let argument = self.parse_argument(text);
-                self.set_global_template(&mut connection, message, argument)
+                self.set_global_preview(&mut connection, message, argument)
             }
             Err(error_message) => error_message,
         }

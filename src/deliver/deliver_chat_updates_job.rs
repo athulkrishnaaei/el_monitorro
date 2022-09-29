@@ -122,7 +122,6 @@ impl DeliverChatUpdatesJob {
             };
 
             let messages = format_messages(template, chat.utc_offset_minutes, feed_items, feed);
-
             match filter_words {
                 None => {
                     for (message, publication_date) in messages {
@@ -251,6 +250,30 @@ impl DeliverChatUpdatesJob {
             }
         }
     }
+    fn send_no_preview_text_message(
+        &self,
+        chat: &TelegramChat,
+        message: String,
+        connection: &mut PgConnection,
+        api: &Api,
+        web_preview: bool,
+        notification: bool,
+    ) -> Result<(), DeliverJobError> {
+        let delay = delay_period(chat);
+
+        match api.send_no_preview_text_message(chat.id, message, web_preview, notification) {
+            Ok(_) => {
+                std::thread::sleep(delay);
+                Ok(())
+            }
+
+            Err(error) => {
+                let error_message = format!("{:?}", error);
+
+                Err(handle_error(error_message, connection, chat.id))
+            }
+        }
+    }
 
     fn send_text_message_and_updated_subscription(
         &self,
@@ -261,9 +284,48 @@ impl DeliverChatUpdatesJob {
         api: &Api,
         publication_date: DateTime<Utc>,
     ) -> Result<(), DeliverJobError> {
-        self.send_text_message(chat, message, connection, api)?;
+        let global_preview = chat.no_preview;
+        let subscription_preview = subscription.no_preview;
+        let global_notification = chat.disable_notification;
+        let subscription_notification = true;
 
-        self.update_last_deivered_at(connection, subscription, publication_date)
+        if !subscription_notification && !subscription_preview {
+            let _res: Result<(), DeliverJobError> = match self.send_no_preview_text_message(
+                chat,
+                message,
+                connection,
+                api,
+                global_preview,
+                global_notification,
+            ) {
+                Ok(_) => Ok(()),
+                Err(error) => {
+                    log::error!("Failed to set last_delivered_at: {:?}", error);
+                    Err(DeliverJobError {
+                        msg: format!("Failed to set last_delivered_at : {:?}", error),
+                    })
+                }
+            };
+            self.update_last_deivered_at(connection, subscription, publication_date)
+        } else {
+            let _res: Result<(), DeliverJobError> = match self.send_no_preview_text_message(
+                chat,
+                message,
+                connection,
+                api,
+                subscription_preview,
+                subscription_notification,
+            ) {
+                Ok(_) => Ok(()),
+                Err(error) => {
+                    log::error!("Failed to set last_delivered_at: {:?}", error);
+                    Err(DeliverJobError {
+                        msg: format!("Failed to set last_delivered_at : {:?}", error),
+                    })
+                }
+            };
+            self.update_last_deivered_at(connection, subscription, publication_date)
+        }
     }
 
     fn update_last_deivered_at(

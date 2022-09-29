@@ -90,6 +90,26 @@ pub fn set_global_filter(
         .get_result::<TelegramChat>(conn)
 }
 
+pub fn set_global_preview(
+    conn: &mut PgConnection,
+    chat: &TelegramChat,
+    option: bool,
+) -> Result<TelegramChat, Error> {
+    diesel::update(chat)
+        .set(telegram_chats::no_preview.eq(option))
+        .get_result::<TelegramChat>(conn)
+}
+
+pub fn set_global_notification(
+    conn: &mut PgConnection,
+    chat: &TelegramChat,
+    option: bool,
+) -> Result<TelegramChat, Error> {
+    diesel::update(chat)
+        .set(telegram_chats::disable_notification.eq(option))
+        .get_result::<TelegramChat>(conn)
+}
+
 pub fn set_template(
     conn: &mut PgConnection,
     chat: &TelegramSubscription,
@@ -224,6 +244,7 @@ pub fn fetch_chats_with_subscriptions(
     telegram_chats::table
         .inner_join(telegram_subscriptions::table)
         .filter(telegram_subscriptions::has_updates.eq(true))
+        .filter(telegram_subscriptions::no_preview.eq(true))
         .order(telegram_chats::id)
         .select(telegram_chats::id)
         .distinct()
@@ -334,6 +355,25 @@ pub fn set_subscriptions_has_updates(
         .execute(conn)
 }
 
+pub fn set_subscriptions_has_no_preview(
+    conn: &mut PgConnection,
+    chat: &TelegramSubscription,
+    no_preview: bool,
+) -> Result<TelegramSubscription, Error> {
+    diesel::update(chat)
+        .set(telegram_subscriptions::no_preview.eq(no_preview))
+        .get_result::<TelegramSubscription>(conn)
+}
+
+pub fn set_subscriptions_has_notification(
+    conn: &mut PgConnection,
+    chat: &TelegramSubscription,
+    notification: bool,
+) -> Result<TelegramSubscription, Error> {
+    diesel::update(chat)
+        .set(telegram_subscriptions::disable_notification.eq(notification))
+        .get_result::<TelegramSubscription>(conn)
+}
 #[cfg(test)]
 mod tests {
     use super::NewTelegramChat;
