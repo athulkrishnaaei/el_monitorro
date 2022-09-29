@@ -8,7 +8,6 @@ static PREVIEW: &str = "/set_global_preview";
 pub struct SetGlobalNotificationPreviewKeyboard {}
 
 impl SetGlobalNotificationPreviewKeyboard {
-  
     pub fn set_global_notification_keyboard(message: Message) -> SendMessageParams {
         let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
 
