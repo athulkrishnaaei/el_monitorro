@@ -159,7 +159,7 @@ impl FromStr for BotCommand {
             BotCommand::RemoveFilter(args)
         } else if command.starts_with(SetTemplate::command()) {
             let args = parse_args(SetTemplate::command(), command);
-
+           
             BotCommand::SetTemplate(args)
         } else if command.starts_with(GetTemplate::command()) {
             let args = parse_args(GetTemplate::command(), command);
@@ -179,7 +179,7 @@ impl FromStr for BotCommand {
             BotCommand::GetGlobalTemplate
         } else if command.starts_with(SetGlobalTemplate::command()) {
             let args = parse_args(SetGlobalTemplate::command(), command);
-
+     
             BotCommand::SetGlobalTemplate(args)
         } else if command.starts_with(GetGlobalFilter::command()) {
             BotCommand::GetGlobalFilter

@@ -5,10 +5,7 @@ use crate::db::telegram;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
-use frankenstein::InlineKeyboardButton;
-use frankenstein::InlineKeyboardMarkup;
-use frankenstein::ReplyMarkup;
-use frankenstein::SendMessageParams;
+
 use typed_builder::TypedBuilder;
 static COMMAND: &str = "/set_global_filter";
 
@@ -61,28 +58,3 @@ impl Command for SetGlobalFilter {
     }
 }
 
-pub fn set_global_filter_keyboard(message: Message, _feed_url: String) -> SendMessageParams {
-    let _text = message.text.unwrap();
-    let mut keyboard: Vec<Vec<InlineKeyboardButton>> = Vec::new();
-
-    let mut row: Vec<InlineKeyboardButton> = Vec::new();
-
-    let substring = InlineKeyboardButton::builder()
-        .text("Click here")
-        .switch_inline_query_current_chat("/set_global_filter  filter_words")
-        .build();
-
-    row.push(substring);
-
-    keyboard.push(row);
-
-    let inline_keyboard = InlineKeyboardMarkup::builder()
-        .inline_keyboard(keyboard)
-        .build();
-
-    SendMessageParams::builder()
-        .chat_id(message.chat.id)
-        .text("send your filter words")
-        .reply_markup(ReplyMarkup::InlineKeyboardMarkup(inline_keyboard))
-        .build()
-}

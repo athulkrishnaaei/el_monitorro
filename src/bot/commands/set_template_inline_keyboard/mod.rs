@@ -250,11 +250,11 @@ impl SetTemplateInlineKeyboard {
 
         let create_link_bot_item_description = InlineKeyboardButton::builder()
             .text("Make bot item description as link")
-            .callback_data(format!("/set_template {} create_link_description", feed_id))
+            .callback_data(format!("set__template_description {}", feed_id))
             .build();
         let create_link_bot_item_name = InlineKeyboardButton::builder()
             .text("Make bot item name as link")
-            .callback_data(format!("/set_template {} create_link_item_name", feed_id))
+            .callback_data(format!("set__template_item_name {}", feed_id))
             .build();
         let create_link_custom_name = InlineKeyboardButton::builder()
             .text("Make custom name as link")

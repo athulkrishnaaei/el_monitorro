@@ -51,6 +51,8 @@ enum CallbackDatas {
     GetFilter(String),
     GetTemplate(String, String),
     SetTemplate(String, String),
+    CallbackSetTemplateCreateLinkDescription(String),
+    CallbackSetTemplateCreateLinkBotItemName(String),
     CallbackSetTemplate(Option<String>),
     CallbackSubstring(String),
     CallbackItalic,
@@ -144,6 +146,16 @@ impl FromStr for CallbackDatas {
                 let feedid = parse_int_from_string(&st);
                 CallbackDatas::CallbackSetTemplate(feedid)
             }
+            st if st.starts_with(SetTemplate::create_link_description()) => {
+                let feedid = parse_int_from_string(&st).unwrap();
+                let feed_url = get_feed_url_by_id(db_pool, feedid.clone());
+                CallbackDatas::CallbackSetTemplateCreateLinkDescription(feed_url)
+            }
+            st if st.starts_with(SetTemplate::create_link_item_name()) => {
+                let feedid = parse_int_from_string(&st).unwrap();
+                let feed_url = get_feed_url_by_id(db_pool, feedid.clone());
+                CallbackDatas::CallbackSetTemplateCreateLinkBotItemName(feed_url)
+            }
             st if st.starts_with(SetTemplateInlineKeyboard::substring()) => {
                 let feedid = parse_int_from_string(&st).unwrap();
                 let feed_url = get_feed_url_by_id(db_pool, feedid);
@@ -174,7 +186,9 @@ impl FromStr for CallbackDatas {
                 let feed_url = get_feed_url_by_id(db_pool, feedid.clone());
                 CallbackDatas::RemoveFilter(feedid, feed_url)
             }
-            st if st.starts_with(SetGlobalTemplate::command()) => CallbackDatas::SetGlobalTemplate,
+            st if st.starts_with(SetGlobalTemplate::command()) => {
+                CallbackDatas::SetGlobalTemplate
+            }
             st if st.starts_with(SetGlobalTemplate::create_link_description()) => {
                 CallbackDatas::CallbackGlobalTemplateCreateLinkDescription
             }
@@ -286,7 +300,7 @@ impl Handler {
         let bot_name = Config::telegram_bot_handle();
         let binding = text.unwrap().replace(&bot_name, "");
         let commands = binding.as_str();
-
+      
         let command = BotCommand::from_str(commands).unwrap();
 
         match command {
@@ -490,13 +504,37 @@ impl Handler {
             CallbackDatas::SetTemplate(feedid, feed_url) => {
                 let text = &commands.replace(&feedid, &feed_url);
                 let args = parse_args(SetTemplate::command(), text);
-
                 message.text = Some(text.trim().to_string());
+                
                 SetTemplate::builder()
                     .message(message.clone())
                     .args(args)
                     .build()
                     .run(db_pool, api, message)
+            }
+            CallbackDatas::CallbackSetTemplateCreateLinkDescription(feed_url) =>{
+              
+                message.text =Some(format!("/set_template {} {{create_link bot_item_description bot_item_link}}",feed_url));
+                let args =parse_args(SetTemplate::command(), &message.clone().text.unwrap());
+
+                SetTemplate::builder()
+                .message(message.clone())
+                .args(args)
+                .build()
+                .run(db_pool, api, message)
+            }
+            CallbackDatas::CallbackSetTemplateCreateLinkBotItemName(feed_url) =>{
+                message.text = Some(
+                    format!("/set_template {} {{create_link bot_item_description bot_item_link}}",feed_url)
+                );
+              
+                let args =parse_args(SetTemplate::command(), &message.clone().text.unwrap());
+
+                SetTemplate::builder()
+                .message(message.clone())
+                .args(args)
+                .build()
+                .run(db_pool, api, message)
             }
             CallbackDatas::CallbackSetTemplate(feedid) => match feedid {
                 Some(feedid) => {
@@ -546,7 +584,7 @@ impl Handler {
             }
             CallbackDatas::CallbackCreateLink(feed_url) => {
                 api.delete_message(&delete_message_params).unwrap();
-                let data = &commands.replace("create_link", "");
+                let data =parse_int_from_string(&commands).unwrap();
 
                 let send_message_params =
                     SetTemplateInlineKeyboard::set_template_create_link_keyboard(
@@ -606,8 +644,8 @@ impl Handler {
                         .to_string(),
                 );
 
-                let args = "{{create_link bot_item_description bot_item_link}}".to_string();
-
+               let args = "{{create_link bot_item_description bot_item_link}}".to_string();
+           
                 SetGlobalTemplate::builder()
                     .message(message.clone())
                     .args(args)

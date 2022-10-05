@@ -11,7 +11,8 @@ use typed_builder::TypedBuilder;
 static COMMAND: &str = "/set_template";
 static CALLBACK: &str = "set_template";
 static DEFAULT_TEMPLATE: &str = "set_default_template";
-
+static SET_TEMPLATE_CREATE_LINK_DESCRIPTION: &str ="set__template_description";
+static SET_TEMPLATE_CREATE_LINK_BOT_ITEM_NAME: &str ="set__template_item_name";
 #[derive(TypedBuilder)]
 pub struct SetTemplate {
     message: Message,
@@ -72,6 +73,14 @@ impl SetTemplate {
 
     pub fn default_template() -> &'static str {
         DEFAULT_TEMPLATE
+    }
+
+    pub fn create_link_description() -> &'static str {
+        SET_TEMPLATE_CREATE_LINK_DESCRIPTION
+    }
+
+    pub fn create_link_item_name() -> &'static str {
+        SET_TEMPLATE_CREATE_LINK_BOT_ITEM_NAME
     }
 }
 
