@@ -1,3 +1,4 @@
+use super::modify_feed::ModifyFeed;
 use super::Close;
 use super::Command;
 use super::Message;
@@ -9,6 +10,7 @@ use frankenstein::InlineKeyboardButton;
 use frankenstein::InlineKeyboardMarkup;
 use frankenstein::ReplyMarkup;
 use frankenstein::SendMessageParams;
+use std::str::FromStr;
 use typed_builder::TypedBuilder;
 
 static COMMAND: &str = "/list_subscriptions";
@@ -16,6 +18,25 @@ static COMMAND: &str = "/list_subscriptions";
 #[derive(TypedBuilder)]
 pub struct ListSubscriptions {
     message: Message,
+}
+
+pub enum Modify {
+    ModifyME,
+    UnknownCommand,
+}
+
+impl FromStr for Modify {
+    type Err = ();
+
+    fn from_str(command: &str) -> Result<Self, Self::Err> {
+        let command = if command.starts_with(ModifyFeed::command()) {
+            Modify::ModifyME
+        } else {
+            Modify::UnknownCommand
+        };
+
+        Ok(command)
+    }
 }
 
 impl ListSubscriptions {
@@ -79,7 +100,7 @@ impl Command for ListSubscriptions {
 
             let listsubscriptions_inlinekeyboard = InlineKeyboardButton::builder()
                 .text(name.clone())
-                .callback_data(format!("list_subscriptions {}", feed_id))
+                .callback_data(format!("/modify_feed {}", feed_id))
                 .build();
 
             row.push(listsubscriptions_inlinekeyboard);

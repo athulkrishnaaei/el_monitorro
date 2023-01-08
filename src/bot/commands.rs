@@ -42,6 +42,8 @@ pub use subscribe::Subscribe;
 pub use unknown_command::UnknownCommand;
 pub use unsubscribe::Unsubscribe;
 
+use self::modify_feed::ModifyFeed;
+
 pub mod close;
 pub mod get_filter;
 pub mod get_global_filter;
@@ -52,6 +54,7 @@ pub mod help;
 pub mod help_command_info;
 pub mod info;
 pub mod list_subscriptions;
+pub mod modify_feed;
 pub mod remove_filter;
 pub mod remove_global_filter;
 pub mod remove_global_template;
@@ -113,6 +116,7 @@ pub enum BotCommand {
     Subscribe(String),
     UnknownCommand(String),
     Unsubscribe(String),
+    ModifyFeed(String),
 }
 
 impl FromStr for BotCommand {
@@ -193,6 +197,8 @@ impl FromStr for BotCommand {
             BotCommand::SetContentFields(args)
         } else if command.starts_with(Close::command()) {
             BotCommand::Close
+        } else if command.starts_with(ModifyFeed::command()) {
+            BotCommand::ModifyFeed(command.to_string())
         } else {
             BotCommand::UnknownCommand(command.to_string())
         };
@@ -452,6 +458,12 @@ impl CommandProcessor {
                 .run(),
 
             BotCommand::Close => Close::builder().message(self.message.clone()).build().run(),
+
+            BotCommand::ModifyFeed(args) => ModifyFeed::builder()
+                .message(self.message.clone())
+                .args(args.to_string())
+                .build()
+                .run(),
         };
     }
 }
